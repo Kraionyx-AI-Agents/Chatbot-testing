@@ -1,0 +1,47 @@
+name: Deploy Frontend to GitHub Pages
+
+# 1. WHEN SHOULD THIS RUN?
+on:
+  push:
+    branches: ["main"] # Only run when code is pushed or merged into main
+  workflow_dispatch: # Allows you to run it manually from the Actions tab
+
+# 2. PERMISSIONS
+permissions:
+  contents: read
+  pages: write      # Gives the robot permission to modify your GitHub Page
+  id-token: write
+
+# 3. WHAT SHOULD THE ROBOT DO?
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step A: Download your code onto the robot's server
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step B: Install Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Step C: Install dependencies and build the app
+      - name: Build the App
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+
+      # Step D: Upload the finished 'dist' folder to GitHub Pages
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './frontend/dist'
+
+      # Step E: Publish it live to the internet!
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
