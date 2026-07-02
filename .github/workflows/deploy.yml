@@ -29,11 +29,16 @@ jobs:
           node-version: 20
 
       # Step C: Install dependencies and build the app
+            # Step C: Install dependencies and build the app
       - name: Build the App
         working-directory: ./frontend
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
           npm install
           npm run build
+
 
       # Step D: Upload the finished 'dist' folder to GitHub Pages
       - name: Upload Artifact
