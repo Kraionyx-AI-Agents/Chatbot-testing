@@ -29,7 +29,6 @@ jobs:
           node-version: 20
 
       # Step C: Install dependencies and build the app
-            # Step C: Install dependencies and build the app
       - name: Build the App
         working-directory: ./frontend
         env:
