@@ -38,7 +38,6 @@ jobs:
           npm install
           npm run build
 
-
       # Step D: Upload the finished 'dist' folder to GitHub Pages
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
