@@ -56,3 +56,25 @@ git checkout feature/backend
 # Switch back to the main branch
 git checkout main
 ```
+
+## 6. Merging Neatly (The GitHub Way)
+If you merge branches in your terminal using `git merge`, your commit history can quickly look like a messy spiderweb. 
+
+The industry standard "neat" way to merge code is:
+1. Push your branch to GitHub (like you just did!)
+2. Go to your repository on GitHub.com and click the green **Compare & pull request** button.
+3. Review your code in the PR (Pull Request).
+4. Click the arrow next to the green Merge button and select **Squash and merge**.
+   - *Why Squash?* It takes all the 50 messy little "WIP" or "typo fix" commits you made on your branch and squashes them into **ONE clean commit** on the `main` branch.
+5. After it's merged on GitHub, go back to your terminal, delete the branch, and pull the latest code:
+
+```bash
+# Switch to main
+git checkout main
+
+# Get the clean, squashed code from GitHub
+git pull origin main
+
+# Delete your local feature branch since it is already merged
+git branch -D feature/frontend
+```
