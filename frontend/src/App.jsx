@@ -1,12 +1,34 @@
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 import './index.css';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -16,9 +38,40 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
-  const handleLogin = (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
-    setIsLoggedIn(true);
+    setAuthError('');
+    setIsLoading(true);
+
+    try {
+      let error;
+      if (isLoginMode) {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+        error = signInError;
+      } else {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: authEmail,
+          password: authPassword,
+        });
+        error = signUpError;
+        if (!error) {
+          alert('Check your email for the confirmation link!');
+        }
+      }
+
+      if (error) throw error;
+    } catch (error) {
+      setAuthError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const handleSendMessage = async (e) => {
@@ -31,7 +84,6 @@ function App() {
     setIsLoading(true);
 
     try {
-      // Send to FastAPI backend
       const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: {
@@ -54,24 +106,51 @@ function App() {
     }
   };
 
-  if (!isLoggedIn) {
+  if (!session) {
     return (
       <div className="app-container">
         <div className="login-card glass">
           <div className="login-header">
-            <h1>Welcome Back</h1>
-            <p>Sign in to continue to Chatbot</p>
+            <h1>{isLoginMode ? 'Welcome Back' : 'Create Account'}</h1>
+            <p>{isLoginMode ? 'Sign in to continue to Chatbot' : 'Sign up to start chatting'}</p>
           </div>
-          <form onSubmit={handleLogin} className="login-form">
+          <form onSubmit={handleAuth} className="login-form">
+            {authError && <div className="auth-error">{authError}</div>}
+            
             <div className="input-group">
               <label>Email</label>
-              <input type="email" placeholder="you@example.com" required />
+              <input 
+                type="email" 
+                placeholder="you@example.com" 
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                required 
+              />
             </div>
             <div className="input-group">
               <label>Password</label>
-              <input type="password" placeholder="••••••••" required />
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                required 
+              />
             </div>
-            <button type="submit" className="primary-btn">Sign In</button>
+            <button type="submit" className="primary-btn" disabled={isLoading}>
+              {isLoading ? 'Loading...' : (isLoginMode ? 'Sign In' : 'Sign Up')}
+            </button>
+            
+            <button 
+              type="button" 
+              className="toggle-auth-btn"
+              onClick={() => {
+                setIsLoginMode(!isLoginMode);
+                setAuthError('');
+              }}
+            >
+              {isLoginMode ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+            </button>
           </form>
         </div>
       </div>
@@ -83,7 +162,10 @@ function App() {
       <div className="chat-interface glass">
         <div className="chat-header">
           <h2>Kraionyx Chatbot</h2>
-          <button onClick={() => setIsLoggedIn(false)} className="logout-btn">Logout</button>
+          <div className="header-actions">
+            <span className="user-email">{session.user.email}</span>
+            <button onClick={handleLogout} className="logout-btn">Logout</button>
+          </div>
         </div>
         
         <div className="messages-container">

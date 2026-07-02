@@ -41,7 +41,7 @@ def chat_endpoint(chat_message: ChatMessage):
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": chat_message.message}
             ],
-            model="llama3.1-8b",
+            model="gemma-4-31b",
         )
         return {"response": response.choices[0].message.content}
     except Exception as e:
